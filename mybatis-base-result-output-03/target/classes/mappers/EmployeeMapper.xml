@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace = 接口的全限定符 -->
+<mapper namespace="com.atguigu.mapper.EmployeeMapper">
+
+    <!-- DML -->
+    <delete id="deleteById">
+        delete
+        from t_emp
+        where emp_id = #{id}
+    </delete>
+
+    <!--
+        场景1：返回单个简单类型如何指定  resultType的写法！  返回值的数据类型！
+                resultType 语法：
+                    类的全限定符号   java.lang.String
+                    别名简称  string
+                        mybatis提供了72中默认的别名！
+                        这些都是常用的Java数据类型！
+                            基本数据类型 int double -> _int _double
+                            包装数据类型 Integer Double -> int integer double
+                            集合容器类型 Map List HashMap -> 小写即可 map list hashmap
+
+                    扩展：如果没有提供，需要自己定义或者写类的全限定符号
+                    给自己的类如何定义别名
+    -->
+    <select id="queryNameById" resultType="string">
+        select emp_name
+        from t_emp
+        where emp_id = #{id}
+    </select>
+
+    <select id="querySalaryById" resultType="double">
+        select emp_name
+        from t_emp
+        where emp_id = #{id}
+    </select>
+
+
+    <!--
+        场景2：返回单个自定义类类型 resultType : 返回值类型即可
+
+        默认要求：
+            查询，返回单个实体类型， 要求列名和属性名要一致！
+            这样才可以进行实体类的属性映射！
+
+        但是可以进行设置，设置支持驼峰式自动映射！ 类名emp_id -> empId === 属性名 empId
+    -->
+    <select id="queryById" resultType="employee">
+        select *
+        from t_emp
+        where emp_id = #{id}
+    </select>
+
+    <!-- 场景3： 返回map  当没有实体类可以使用接值的时候！ 可以使用map接收数据！  key -> 查询的列  value -> 查询的值 -->
+    <select id="selectEmpNameAndMaxSalary" resultType="map">
+        select emp_name 员工姓名, emp_salary 员工工资, (select avg(emp_salary) from t_emp) 部门平均工资
+        from t_emp
+        where emp_salary = (select max(emp_salary) from t_emp)
+    </select>
+
+    <!--
+        场景4：返回的是集合类型如何指定
+        // 查询工资高于传入值的员工姓名们 200
+        List<String> queryNameBySalary(Double salary);
+
+        // 查询全部员工信息
+        List<Employee> queryAll();
+
+        切记：返回值是集合。resultType 不需要指定集合类型，只需要指定泛型即可！！
+        为什么？  无论查询单个还是查询集合，底层调用的都是selectList
+            mybatis -> ibatis -> selectOne 单个 | selectList 集合  ->  selectOne  调用[selectList]
+     -->
+    <select id="queryNameBySalary" resultType="string">
+        select emp_name from t_emp where emp_salary > #{salary}
+    </select>
+
+    <select id="queryAll" resultType="employee">
+        select * from t_emp
+    </select>
+
+    <!--
+        场景5：主键回显 获取插入数据的主键
+            1. 自增长主键回显 mysql auto_increment
+            useGeneratedKeys="true" 想要数据库自动增加的主键
+            keyColumn="emp_id" 主键列的值
+            keyProperty="empId" 接收主键列值的属性
+
+    -->
+    <insert id="insertEmp" useGeneratedKeys="true" keyColumn="emp_id" keyProperty="empId">
+        insert into t_emp (emp_name, emp_salary) value (#{empName},#{empSalary})
+    </insert>
+
+
+</mapper>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace = 接口的全限定符 -->
+<mapper namespace="com.atguigu.mapper.EmployeeMapper">
+    <!--
+            List<Employee> query(@Param("name") String name, @Param("salary") Double salary);
+            如果传入属性，就判断相等，如果不传入，不加对应的条件
+            where
+            if 判断传入的参数，最终是否添加语句
+                test 属性，内部作比较运算，最终true将标签内的sql语句进行拼接  false不拼接标签内部语句
+                    判断语句： "key 比较符号 值 and | or key 比较符号 值""
+                    大于和小于 不推荐直接写符号！ 实体符号 html > ==&gt;  < *lt;
+
+            问题：
+
+        -->
+
+    <sql id="selectSql">
+        select *
+        from t_emp
+    </sql>
+
+    <select id="query" resultType="employee">
+        <include refid="selectSql"/>
+        <where>
+            <if test="name!=null">
+                emp_name = #{name}
+            </if>
+            <if test="salary != null and salary &gt; 100">
+                and emp_dalary=#{salary}
+            </if>
+        </where>
+    </select>
+
+
+    <!--
+        全部满足：没问题
+        第一个满足：多了一个逗号，
+        第二个满足：没问题
+        都不满足：语法错误
+
+        set 标签：1. 自动去掉多余的 逗号，
+                 2. 自动添加set关键字
+     -->
+
+    <update id="update">
+        update t_emp
+        <set>
+            <if test="empName != null">
+                emp_name = #{empName},
+            </if>
+            <if test="empSalary">
+                emp_salary = #{empSalary}
+            </if>
+        </set>
+
+        where emp_id = #{empId}
+    </update>
+
+
+    <select id="queryTrim" resultType="employee">
+        select *
+        from t_emp
+        <trim prefix="where" prefixOverrides="and|or">
+            <if test="name!=null">
+                emp_name = #{name}
+            </if>
+            <if test="salary != null and salary &gt; 100">
+                and emp_dalary=#{salary}
+            </if>
+        </trim>
+    </select>
+
+    <update id="updateTrim">
+        update t_emp
+        <trim prefix="set" suffixOverrides=",">
+            <if test="empName != null">
+                emp_name = #{empName},
+            </if>
+            <if test="empSalary">
+                emp_salary = #{empSalary}
+            </if>
+        </trim>
+
+        where emp_id = #{empId}
+    </update>
+
+
+    <select id="queryChoose" resultType="employee">
+        select *
+        from t_emp
+        where
+        <choose>
+            <when test="name!=null">emp_name = #{name}</when>
+            <when test="salary != null">emp_dalary=#{salary}</when>
+            <otherwise>1=1</otherwise>
+        </choose>
+    </select>
+
+
+    <!-- // 根据id批量查询
+     List<Employee> queryBatch(@Param("ids") List<Integer> ids);-->
+
+    <select id="queryBatch" resultType="employee">
+        select * from t_emp where emp_id in
+        <!-- 遍历的数据
+          collection="ids | arg0 | list"
+          open 遍历之前要追加的字符串
+          close 遍历结束需要添加的字符串!  如果是最后依次，不会追加
+          item 获取每个遍历项
+        -->
+        <foreach collection="ids" open="(" separator="," close=")" item="id">
+            <!-- 遍历的内容，#{遍历项 item指定的key} -->
+            #{id}
+        </foreach>
+    </select>
+
+    <!--// 根据id批量删除
+    int deleteBath(@Param("ids") List<Integer> ids);-->
+    <delete id="delteBatch">
+        delete
+        from t_emp
+        where id in
+        <foreach collection="ids" open="(" close=")" separator="," item="id">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!--//根据id批量添加
+    int insertBatch(@Param("employees") List<Employee> employees);-->
+    <insert id="insertBatch">
+        insert into t_emp (emp_name,emp_salary)
+        values
+        <foreach collection="employees" item="employee" separator=",">
+            (#{employee.empName},#{employee.empSalary})
+        </foreach>
+    </insert>
+
+    <!--//根据id批量修改
+    int updateBatch(@Param("employees") List<Employee> employees);-->
+    <!-- 如果一个标签包含多个sql语句，需要设置允许指定多语句执行！ -->
+    <update id="updateBatch">
+        <foreach collection="employees" item="employee">
+            update t_emp
+            set emp_name = #{employee.empName},
+            emp_salary = #{employee.empSalary}
+            where emp_id = #{employee.empId}
+        </foreach>
+
+    </update>
+</mapper>
